@@ -6,19 +6,22 @@ from nornir import InitNornir
 from nornir_utils.plugins.functions import print_result
 from nornir_scrapli.tasks import send_command
 from rich import print as rprint
-#Importing various libaries including ip_address and ip_network from ipaddress which will allow
-#us to check for specific IP in a subnet
-rprint("[bold red on yellow]***************************THIS SCRIPT WILL LOCATE A MAC ADDRESS ON THE NETWORK*************************[/bold red on yellow]")
+
+# Importing various libaries including ip_address and ip_network from ipaddress which will allow
+# us to check for specific IP in a subnet
+rprint(
+    "[bold red on yellow]***************************THIS SCRIPT WILL LOCATE A MAC ADDRESS ON THE NETWORK*************************[/bold red on yellow]"
+)
 time.sleep(2)
-#displaying a banner to confirm what the script does to the user
+# displaying a banner to confirm what the script does to the user
 nr = InitNornir(config_file="config.yaml")
 print("Please enter your Login credentials")
 username = input("username: ")
 password = getpass.getpass()
 nr.inventory.defaults.username = username
 nr.inventory.defaults.password = password
-#above section is initialising nornir and using getpass to prompt the user to enter 
-#their username and password. It will use the credentials to login to each host
+# above section is initialising nornir and using getpass to prompt the user to enter
+# their username and password. It will use the credentials to login to each host
 
 nr = InitNornir(config_file="config.yaml")
 target_list = []
@@ -43,6 +46,7 @@ def pull_info(task):
                 print_info(task, intf)
         except KeyError:
             pass
+
 
 def print_info(task, intf):
     rprint("\n[green]*** TARGET IDENTIFIED ***[/green]")

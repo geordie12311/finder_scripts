@@ -1,3 +1,4 @@
+"""Menu for Python finder scripts"""
 import sys
 import time
 from rich import print as rprint

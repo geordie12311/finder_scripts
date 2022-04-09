@@ -1,3 +1,5 @@
+"""Python script to find duplicate IPs on the network"""
+
 import getpass
 import threading
 from nornir import InitNornir
@@ -6,23 +8,29 @@ from nornir.core.filter import F
 from nornir_utils.plugins.functions import print_result
 from rich import print as rprint
 from collections import Counter
-#Importing various libaries including counter to count the dictionary values for the output of the 
-#IP addresses so the functions can identify any duplicates. F filter from nornir.core to enable the user
-#to define locations to search or exclude (or leave default for all areas) and threading to clean up 
-#the way the data is displayed to the user.
+
+
+"""Initialising nornir and using getpass to prompt for the host password"""
 
 nr = InitNornir(config_file="config.yaml")
 password = getpass.getpass()
 nr.inventory.defaults.password = password
-#above section is initialising nornir and using getpass to prompt the user to enter their password
+
+
+"""Creating empty list to hold ip address information"""
 
 ipadd_list = []
-#creating empty list to hold results of IP address search
+
+
+"""Creating object for threading.lock which will be 
+used to clean up the data displayed"""
 
 LOCK = threading.Lock()
-#creating object for threading.Lock that will be used to clean up the data displayed
 filtered = False
-#setting filtered default as False
+
+
+"""Prompting user to confirm if they want 
+to use a the location filter"""
 
 answer = input("Would you like to apply a location filter to this script? <y/n> ")
 if answer == "y":
@@ -33,9 +41,10 @@ if answer == "y":
         filtered_hosts = nr.filter(~F(location=location))
     else:
         filtered_hosts = nr.filter(F(location=location))
-#The above section is creating an input logic for the user if they wish to filter the search
-#by a specific location or to exclude one. Once the user has completed the input depending on their
-#answers the logic at the end of the script will trigger the correct logic in the script
+#Once the user has completed the input depending on theiranswers the logic at the end of the script will trigger the correct logic in the script
+
+
+"""Gathering the IP information from the hosts"""
 
 def get_ipaddr(task):
     response = task.run(task=send_command, command="show interfaces")
@@ -49,11 +58,14 @@ def get_ipaddr(task):
                 ipadd_list.append(ip_addr)
         except KeyError:
             pass
-#The above function is going to run the command Show Interfaces and then uing task.host["facts"]
-#we are going to send the output to genie parse which will output it in structured data format
-#then we use the facts object that contains the data and create an intf object for interfaces
-#a ip_key object for the ipv4 information and a ip_key object for ip address of the interface
+#The above function is going to run the command Show Interfaces and then uing task.host["facts"], we are going to send the output 
+#to genie parse which will output it in structured data format. Then we use the facts object that contains the data and create 
+# an intf object for interfaces and a ip_key object for the ipv4 information and a ip_key object for ip address of the interface
 #finally we create an expection to ignore KeyErrors if there is no IP information on the interface 
+
+
+
+"""Generating the IP location information"""
 
 def locate_ip(task):
     response = task.run(task=send_command, command="show interfaces")
@@ -80,13 +92,15 @@ def locate_ip(task):
                     LOCK.release()
         except KeyError:
             pass
-#This function above is also going to use show interfaces command to parse out data to genie parser
-#but this time it is going to use the data to display extra information if a duplicate IP was identified
-#during the first function. The second task this function will perform is that will run a second command 
-#"show version" and again using genie parser will pull out data specific relating to the devices which have 
-#been found with a duplicate IP. It is also going to pull data for the host from the hostfile that is held 
-# under the data heading that is specfic to the device and print it out along with hostname, IP, 
-#interface details etc. 
+#Using show interfaces command to parse out data to genie parser but this time it is going to use the data to display 
+#extra information if a duplicate IP was identified during the first function. The second task this function will perform 
+#is that will run a second command "show version" and again using genie parser will pull out data specific relating to 
+#the devices which have been found with a duplicate IP. It is also going to pull data for the host from the hostfile 
+#that is held under the data heading that is specfic to the device and print it out along with hostname, IP, interface details etc. 
+
+
+"""filtering the IP address information and validating 
+if there are any duplicate IPs detected"""
 
 if filtered:
     filtered_hosts.run(task=get_ipaddr)
@@ -109,12 +123,10 @@ else:
         nr.run(task=locate_ip)
     else:
         rprint("I[green]IP SCAN COMPLETED - NO DUPLICATE IPs DETECTED[/green]")
-#Above section will be triggered if the user says no to filter option
-
-#These two logic layers triger based on the input from the user at the start regarding 
-# filter settings and the outcome of the search of IP addresses is going to trigger the correct
-#function. If after collating the IP address information there is duplicates found and stored in 
-#the ip_add list it will trigger the locate_IP function above to collate the device hostname, 
-#interface etc and also the additional host specific information gathered from the show version
-#and from the data section in the host file. If no duplicate IPs are found it will inform the user
-#by outputting the NO DUPLICATE IPs DETECTED statement above to the screen
+#Above section will be triggered if the user says no to filter option. These two logic layers triger based on 
+#the input from the user at the start regarding filter settings and the outcome of the search of IP addresses 
+#is going to trigger the correct function. If after collating the IP address information there is duplicates 
+#found and stored in the ip_add list it will trigger the locate_IP function above to collate the device hostname, 
+#interface etc and also the additional host specific information gathered from the show version and from the data 
+#section in the host file. If no duplicate IPs are found it will inform the user by outputting the 
+#NO DUPLICATE IPs DETECTED statement above to the screen
